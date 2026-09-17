@@ -1,78 +1,72 @@
-# Proyecto y Bugs — Entrega final OCA
+# Reto Técnico OCA — Entrega
 
-Este repositorio reúne la solución de los ejercicios técnicos y una demo funcional integrada que muestra el comportamiento esperado del sistema final.
+Esta entrega tiene dos partes principales:
 
-## Objetivo
-
-La entrega tiene dos partes:
-
-- Soluciones a los ejercicios del reto técnico.
-- Una demostración visual y navegable del flujo real de negocio: login, pagos, mora, ranking y notificaciones.
-
-## Estructura del proyecto
+1. Las soluciones a los 9 ejercicios pedidos en el reto.
+2. Un sistema demo de un solo archivo, listo para abrir directamente en el navegador.
 
 ```text
-entrega_final/
-├── A-php/
-│   ├── A1_login_seguro.php
-│   ├── A2_registrar_pago.php
-│   └── A3_dias_mora.php
-├── B-sql/
-│   ├── B1_top5_clientes.sql
-│   ├── B2_traduccion_tsql.sql
-│   └── B3_rendimiento.md
-├── C-frontend/
-│   ├── C1_ListaClientes.jsx
-│   ├── C2_pagosSlice.js
-│   └── C3_axiosInterceptors.js
-├── D-nodejs/
-│   └── D1_socketio_salas.js
+entrega/
+├── A-php/                          Ejercicios de PHP (login, pagos, mora)
+├── B-sql/                          Ejercicios de SQL (ranking, paginación, rendimiento)
+├── C-frontend/                     Ejercicios de React / Redux Toolkit / Axios
+├── D-nodejs/                       Bonus de Socket.IO
 ├── sistema-demo/
-│   └── torre-cobros-oca.html
+│   └── torre-cobros-oca.html       Demo funcional en una sola página
+├── sistema-demo-backend-real/      Versión real con backend PHP + SQLite + Socket.IO
 ├── README.md
-├── .gitignore
-└── .DS_Store (ignorado/local)
+└── .gitignore
 ```
 
-## Cómo ejecutar la demo
+---
 
-La demo es un archivo HTML autocontenido y no requiere servidor ni dependencias.
+## 1. Soluciones a los ejercicios
 
-1. Abrir el archivo:
-   `sistema-demo/torre-cobros-oca.html`
-2. Iniciar sesión con:
-   - Usuario: `analista`
-   - Contraseña: `cobros2026`
+| Archivo | Qué resuelve |
+|---|---|
+| `A-php/A1_login_seguro.php` | Corrige la inyección SQL y la contraseña en texto plano del login original. |
+| `A-php/A2_registrar_pago.php` | Inserta un pago dentro de una transacción PDO (begin/commit/rollback). |
+| `A-php/A3_dias_mora.php` | Corrige los dos defectos de `diasMora()`: mora negativa y decimales por hora. |
+| `B-sql/B1_top5_clientes.sql` | T-SQL: top 5 clientes que más pagaron en los últimos 90 días. |
+| `B-sql/B2_traduccion_tsql.sql` | Traducción de la paginación de MySQL (`LIMIT/OFFSET`) a T-SQL (`OFFSET/FETCH`). |
+| `B-sql/B3_rendimiento.md` | Plan de diagnóstico paso a paso ante una consulta lenta sobre una tabla grande. |
+| `C-frontend/C1_ListaClientes.jsx` | Corrige el `useEffect` que no reaccionaba al cambio de `filtro`. |
+| `C-frontend/C2_pagosSlice.js` | Slice de Redux Toolkit con thunk y estados idle/loading/succeeded/failed. |
+| `C-frontend/C3_axiosInterceptors.js` | Interceptores de Axios: adjuntar JWT y manejar 401. |
+| `D-nodejs/D1_socketio_salas.js` | Notificación por sala en Socket.IO (bonus). |
 
-## Qué incluye la demo
+---
 
-- Login simulado con validación de contraseña segura.
-- Sesión con expiración de 3 minutos.
-- Listado de clientes filtrable.
-- Historial de pagos con estados de carga y error.
-- Registro de pago con bitácora transaccional.
-- Cálculo de días de mora corregido.
-- Top 5 clientes en los últimos 90 días.
-- Notificaciones por sala usando BroadcastChannel como simulación de Socket.IO.
+## 2. Demostración rápida del sistema
 
-## Archivos clave
+La versión recomendada para presentar es la demo de un solo archivo:
 
-- A-php/A1_login_seguro.php: arreglo del login y protección frente a inyección SQL.
-- A-php/A2_registrar_pago.php: transacción con begin/commit/rollback.
-- A-php/A3_dias_mora.php: limpieza de mora negativa y cálculo sin decimales por hora.
-- B-sql/B1_top5_clientes.sql: ranking de clientes por pagos en los últimos 90 días.
-- B-sql/B2_traduccion_tsql.sql: equivalencia de paginación MySQL a T-SQL.
-- B-sql/B3_rendimiento.md: guía para diagnosticar consultas lentas.
-- C-frontend/C1_ListaClientes.jsx: corrección de re-render por filtro.
-- C-frontend/C2_pagosSlice.js: slice con estados async y manejo de errores.
-- C-frontend/C3_axiosInterceptors.js: JWT y 401 interceptor.
-- D-nodejs/D1_socketio_salas.js: notificaciones y salas en Socket.IO.
+- `sistema-demo/torre-cobros-oca.html`
+- se abre directamente en el navegador,
+- no requiere backend ni instalación,
+- permite mostrar login, pagos, mora, top 5 y notificaciones.
 
-## Nota
+Acceso:
+- Usuario: `analista`
+- Contraseña: `cobros2026`
 
-La demo está pensada para mostrar el comportamiento real del reto en una interfaz amigable, sin backend productivo. Los hashes, JWT y notificaciones en tiempo real están simulados en el navegador para fines educativos.
+Abrir en el navegador en:
+- `http://localhost:8080/torre-cobros-oca.html`
 
-## Estado
+---
 
-Proyecto finalizado y preparado para entrega como evidencia técnica de la solución planteada.
+## 3. Versión real del proyecto
 
+También quedó incluida la carpeta `sistema-demo-backend-real/` con:
+
+- backend PHP + SQLite
+- servidor Node + Socket.IO
+- frontend en HTML para probar el flujo real
+
+Esta versión está pensada para demostrar que la lógica puede correr contra datos reales y notificaciones en vivo.
+
+---
+
+## Estado final
+
+Proyecto preparado para entrega con la demo simple como versión principal y la versión real como complemento técnico.

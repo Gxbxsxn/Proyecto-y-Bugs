@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torre de Cobros — OCA (con backend real)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+  :root{
+    --bg:#EDF0F4; --panel:#FFFFFF; --panel-2:#F6F8FA; --border:#D7DCE3;
+    --ink:#141A21; --muted:#5B6472;
+    --teal:#0E7C66; --teal-soft:#E1F2ED;
+    --copper:#C1502E; --copper-soft:#FBE7DF;
+    --amber:#B9800E; --amber-soft:#FBF0D9;
+    --shadow: 0 1px 2px rgba(20,26,33,.04);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0B0F14; --panel:#121821; --panel-2:#171E27; --border:#232B36;
+      --ink:#EAF0F6; --muted:#8A97A6;
+      --teal:#3FC1A0; --teal-soft:#122620;
+      --copper:#E58B62; --copper-soft:#2A1A13;
+      --amber:#E9B94A; --amber-soft:#2A2313;
+      --shadow: 0 1px 2px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; min-height:100vh;}
+  h1,h2,h3,.font-display{font-family:'Space Grotesk',-apple-system,sans-serif;}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;}
+
+  #app{display:none;}
+  #app.ready{display:flex; flex-direction:column; min-height:100vh;}
+
+  header.top{display:flex; align-items:center; gap:1rem; padding:.75rem 1.25rem; border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:0; z-index:20;}
+  header.top .brand{display:flex; align-items:center; gap:.6rem; margin-right:auto;}
+  header.top .brand .dot{width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 3px var(--teal-soft);}
+  .dot.online{background:var(--teal);}
+  .dot.offline{background:var(--copper); box-shadow:0 0 0 3px var(--copper-soft);}
+  header.top .brand small{color:var(--muted); font-size:.78rem;}
+  .clock{font-size:.8rem; color:var(--muted);}
+  .session-chip{display:flex; align-items:center; gap:.45rem; border:1px solid var(--border); border-radius:20px; padding:.3rem .7rem; font-size:.78rem; color:var(--muted); background:var(--panel-2);}
+  .session-chip b{color:var(--ink);}
+  .bell{position:relative; width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--panel-2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem;}
+  .bell .badge{position:absolute; top:-4px; right:-4px; background:var(--copper); color:#fff; font-size:.65rem; min-width:16px; height:16px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 3px;}
+  .btn{border:1px solid var(--border); background:var(--panel-2); color:var(--ink); padding:.45rem .85rem; border-radius:8px; font-size:.85rem; cursor:pointer; font-family:inherit;}
+  .btn:hover{border-color:var(--muted);}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+
+  main.grid{flex:1; display:grid; gap:1rem; padding:1rem 1.25rem; grid-template-columns:280px minmax(0,1fr) 300px; align-items:start;}
+  @media (max-width:980px){ main.grid{grid-template-columns:1fr;} }
+
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; padding:.7rem .9rem; border-bottom:1px solid var(--border);}
+  .panel-head h3{margin:0; font-size:.95rem;}
+  .panel-body{padding:.8rem .9rem;}
+  .panel-body.tight{padding:0;}
+
+  input, select{width:100%; padding:.5rem .6rem; border:1px solid var(--border); border-radius:7px; background:var(--panel-2); color:var(--ink); font-family:inherit; font-size:.85rem;}
+  label{font-size:.78rem; color:var(--muted); display:block; margin:.5rem 0 .25rem;}
+  label:first-child{margin-top:0;}
+
+  .client-row{display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.6rem .9rem; border-bottom:1px solid var(--border); cursor:pointer;}
+  .client-row:last-child{border-bottom:none;}
+  .client-row:hover{background:var(--panel-2);}
+  .client-row.active{background:var(--teal-soft); border-left:3px solid var(--teal); padding-left:calc(.9rem - 3px);}
+  .client-row .name{font-size:.87rem;}
+  .client-row .nit{font-size:.72rem; color:var(--muted);}
+  .pill{font-size:.68rem; padding:.15rem .5rem; border-radius:20px; white-space:nowrap;}
+  .pill.ok{background:var(--teal-soft); color:var(--teal);}
+  .pill.mora{background:var(--copper-soft); color:var(--copper);}
+
+  .status{display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; color:var(--muted);}
+  .status .spin{width:11px; height:11px; border-radius:50%; border:2px solid var(--border); border-top-color:var(--teal); animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .empty{padding:2rem 1rem; text-align:center; color:var(--muted); font-size:.85rem;}
+
+  table{width:100%; border-collapse:collapse; font-size:.82rem;}
+  th{text-align:left; font-weight:500; color:var(--muted); font-size:.72rem; padding:.5rem .9rem; border-bottom:1px solid var(--border); background:var(--panel-2);}
+  td{padding:.55rem .9rem; border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  .amount{font-family:'IBM Plex Mono', monospace;}
+
+  .txlog{font-family:'IBM Plex Mono', monospace; font-size:.75rem; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem; margin-top:.6rem; color:var(--muted); max-height:140px; overflow-y:auto;}
+  .txlog div{padding:.1rem 0;}
+  .txlog .ok-line{color:var(--teal);}
+  .txlog .err-line{color:var(--copper);}
+
+  .rank-row{padding:.55rem .9rem; border-bottom:1px solid var(--border);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-top{display:flex; justify-content:space-between; font-size:.8rem; margin-bottom:.3rem;}
+  .rank-top .n{color:var(--muted); margin-right:.4rem;}
+  .bar-track{height:6px; border-radius:4px; background:var(--panel-2); overflow:hidden;}
+  .bar-fill{height:100%; background:var(--teal); border-radius:4px;}
+
+  .ticker{border-top:1px solid var(--border); background:var(--panel); padding:.5rem 1.25rem; display:flex; align-items:center; gap:.6rem; font-size:.8rem; color:var(--muted); overflow:hidden;}
+  .ticker .live-dot{width:7px; height:7px; border-radius:50%; background:var(--amber); flex:none; animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.25;}}
+  .ticker-msg{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  #toasts{position:fixed; bottom:1rem; right:1rem; display:flex; flex-direction:column; gap:.5rem; z-index:50;}
+  .toast{background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:8px; padding:.65rem .9rem; font-size:.82rem; box-shadow:0 6px 20px rgba(0,0,0,.12); max-width:300px;}
+  .toast b{display:block; font-size:.8rem; margin-bottom:.15rem;}
+
+  #login{min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); padding:1rem;}
+  .login-card{width:100%; max-width:360px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:1.6rem; box-shadow:var(--shadow);}
+  .login-card h1{font-size:1.15rem; margin:.6rem 0 .1rem;}
+  .login-card p{color:var(--muted); font-size:.82rem; margin:0 0 1.1rem;}
+  .login-card .demo{margin-top:1rem; font-size:.75rem; color:var(--muted); background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem;}
+  .field-error{color:var(--copper); font-size:.75rem; min-height:1.1rem; margin-top:.4rem;}
+
+  footer.note{text-align:center; font-size:.72rem; color:var(--muted); padding:.6rem; border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <span class="dot online" style="display:inline-block;background:var(--teal);width:9px;height:9px;border-radius:50%;"></span>
+    <b class="font-display">Torre de Cobros</b>
+    <h1 class="font-display">Iniciar sesión</h1>
+    <p>Este login llama de verdad a <span class="mono">POST /api/login</span> en el backend PHP.</p>
+    <form id="loginForm">
+      <label for="usuario">Usuario</label>
+      <input id="usuario" autocomplete="username" value="analista" required>
+      <label for="clave">Contraseña</label>
+      <input id="clave" type="password" autocomplete="current-password" value="cobros2026" required>
+      <div class="field-error" id="loginError"></div>
+      <button class="btn primary" type="submit" style="width:100%; margin-top:.4rem;" id="loginBtn">Entrar</button>
+    </form>
+    <div class="demo">
+      Requiere que <b>backend-php</b> esté corriendo en <span class="mono">localhost:8000</span>
+      y <b>backend-socket</b> en <span class="mono">localhost:4000</span>. Ver README-backend.md.
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="dot" id="connDot"></span>
+      <div>
+        <div><b class="font-display">Torre de Cobros</b></div>
+        <small id="connLabel">conectando…</small>
+      </div>
+    </div>
+    <div class="clock mono" id="clock"></div>
+    <div class="session-chip" title="Token JWT real, emitido y verificado por el backend">
+      🔐 sesión expira en <b id="sessionCountdown">--</b>
+    </div>
+    <button class="bell" id="bellBtn" title="Notificaciones en tiempo real">
+      🔔<span class="badge" id="bellBadge" style="display:none;">0</span>
+    </button>
+    <button class="btn" id="logoutBtn">Salir</button>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <div class="panel-head"><h3>Clientes</h3></div>
+      <div class="panel-body" style="padding-bottom:.4rem;">
+        <input id="filtroClientes" placeholder="Filtrar por nombre o NIT…">
+      </div>
+      <div class="panel-body tight" id="clientList"></div>
+    </section>
+
+    <section class="panel" id="detailPanel">
+      <div class="panel-head">
+        <h3 id="detailTitle">Selecciona un cliente</h3>
+        <span class="status" id="fetchStatus"></span>
+      </div>
+      <div class="panel-body" id="detailBody">
+        <div class="empty">Elige un cliente de la lista para ver su historial de pagos y su mora.</div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-head"><h3>Top 5 · últimos 90 días</h3></div>
+      <div class="panel-body tight" id="rankingList"></div>
+    </aside>
+  </main>
+
+  <div class="ticker">
+    <span class="live-dot"></span>
+    <span>Sala de eventos en vivo (Socket.IO real):</span>
+    <span class="ticker-msg mono" id="tickerMsg">esperando actividad…</span>
+  </div>
+
+  <footer class="note">
+    Backend real: PHP + SQLite en <span class="mono">localhost:8000</span> · notificaciones en
+    <span class="mono">localhost:4000</span> vía Socket.IO.
+  </footer>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const API_BASE = "http://localhost:8000/api";
+  const SOCKET_URL = "http://localhost:4000";
+  const TOKEN_KEY = "torreCobros_token_v1";
+
+  const $ = (sel)=>document.querySelector(sel);
+  let clienteSeleccionado = null;
+  let notificaciones = 0;
+  let socket = null;
+  let salaActual = null;
+  let countdownTimer = null;
+  let tokenExpiraEn = 0;
+  let tokenEmitidoEn = 0;
+
+  function fmtQ(n){ return "Q " + Number(n).toLocaleString("es-GT", {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function fmtFecha(iso){ return new Date(iso.replace(" ","T")).toLocaleDateString("es-GT", {day:"2-digit", month:"short", year:"numeric"}); }
+
+  function tick(){ $("#clock").textContent = new Date().toLocaleTimeString("es-GT", {hour12:false}); }
+  setInterval(tick, 1000); tick();
+
+  /* =========================================================
+     C3 (real) · cliente HTTP con "interceptor": adjunta el JWT
+     real a cada petición y, si el backend responde 401 de
+     verdad, cierra la sesión y vuelve al login.
+     ========================================================= */
+  async function apiFetch(path, options = {}){
+    const token = localStorage.getItem(TOKEN_KEY);
+    const headers = Object.assign({}, options.headers, {
+      "Content-Type": "application/json",
+    });
+    if (token) headers["Authorization"] = "Bearer " + token;
+
+    const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+
+    if (res.status === 401) {
+      // Interceptor de respuesta: 401 real del servidor -> cerrar sesión.
+      toast("Sesión expirada", "El servidor respondió 401 (token inválido o vencido). Se cerró la sesión, igual que haría un interceptor de Axios.");
+      doLogout();
+      throw new Error("401");
+    }
+
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok) {
+      throw new Error(data.error || `Error ${res.status}`);
+    }
+    return data;
+  }
+
+  /* ---------- Login ---------- */
+  $("#loginForm").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const usuario = $("#usuario").value.trim();
+    const clave = $("#clave").value;
+    const btn = $("#loginBtn");
+    const err = $("#loginError");
+    err.textContent = "";
+    btn.disabled = true; btn.textContent = "Verificando…";
+
+    try{
+      const res = await fetch(API_BASE + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, clave }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        err.textContent = data.error || "No se pudo iniciar sesión.";
+        return;
+      }
+      localStorage.setItem(TOKEN_KEY, data.token);
+      tokenExpiraEn = data.expiraEn;
+      tokenEmitidoEn = Date.now();
+      startApp();
+    }catch(e2){
+      err.textContent = "No se pudo conectar con el backend en " + API_BASE + ". ¿Está corriendo `php -S localhost:8000 -t public`?";
+    }finally{
+      btn.disabled = false; btn.textContent = "Entrar";
+    }
+  });
+
+  $("#logoutBtn").addEventListener("click", doLogout);
+
+  function doLogout(){
+    localStorage.removeItem(TOKEN_KEY);
+    if (countdownTimer) clearInterval(countdownTimer);
+    if (socket) { socket.disconnect(); socket = null; }
+    $("#app").classList.remove("ready");
+    $("#login").style.display = "flex";
+  }
+
+  function startApp(){
+    $("#login").style.display = "none";
+    $("#app").classList.add("ready");
+
+    countdownTimer = setInterval(()=>{
+      const restante = Math.max(0, tokenExpiraEn*1000 - (Date.now()-tokenEmitidoEn));
+      const m = Math.floor(restante/60000);
+      const s = Math.floor((restante%60000)/1000).toString().padStart(2,"0");
+      $("#sessionCountdown").textContent = `${m}:${s}`;
+    }, 1000);
+
+    conectarSocket();
+    renderClientList();
+    renderRanking();
+  }
+
+  /* =========================================================
+     D1 (real) · conexión Socket.IO al servidor de notificaciones.
+     ========================================================= */
+  function conectarSocket(){
+    socket = io(SOCKET_URL, { reconnectionAttempts: 5 });
+
+    socket.on("connect", ()=>{
+      $("#connDot").className = "dot online";
+      $("#connLabel").textContent = "en vivo · localhost:4000";
+      if (clienteSeleccionado) socket.emit("join", clienteSeleccionado);
+    });
+
+    socket.on("disconnect", ()=>{
+      $("#connDot").className = "dot offline";
+      $("#connLabel").textContent = "servidor de notificaciones desconectado";
+    });
+
+    socket.on("connect_error", ()=>{
+      $("#connDot").className = "dot offline";
+      $("#connLabel").textContent = "no se pudo conectar a localhost:4000";
+    });
+
+    socket.on("pago:registrado", (pago)=>{
+      pushTicker(`pago:registrado → sala cliente:${pago.clienteId} · ${fmtQ(pago.monto)}`);
+      bumpBell();
+      if (pago.clienteId === clienteSeleccionado) {
+        toast("Nuevo pago recibido", `Se registró ${fmtQ(pago.monto)} para este cliente — esta vista se actualizó sola vía Socket.IO.`);
+        cargarPagos(clienteSeleccionado);
+        renderClientList($("#filtroClientes").value);
+        renderRanking();
+      }
+    });
+  }
+
+  function pushTicker(msg){ $("#tickerMsg").textContent = `${new Date().toLocaleTimeString("es-GT",{hour12:false})} — ${msg}`; }
+  function bumpBell(){ notificaciones++; const b = $("#bellBadge"); b.style.display="flex"; b.textContent=notificaciones; }
+  $("#bellBtn").addEventListener("click", ()=>{ notificaciones = 0; $("#bellBadge").style.display = "none"; });
+
+  /* ---------- C1 (real): lista de clientes con filtro, vía API real ---------- */
+  let filtroTimeout = null;
+  $("#filtroClientes").addEventListener("input", (e)=>{
+    clearTimeout(filtroTimeout);
+    const valor = e.target.value;
+    filtroTimeout = setTimeout(()=>renderClientList(valor), 250); // pequeño debounce
+  });
+
+  async function renderClientList(filtro){
+    filtro = filtro || "";
+    const cont = $("#clientList");
+    try{
+      const clientes = await apiFetch("/clientes?filtro=" + encodeURIComponent(filtro));
+      if (clientes.length === 0){
+        cont.innerHTML = `<div class="empty">Sin resultados para "${filtro}".</div>`;
+        return;
+      }
+      cont.innerHTML = clientes.map(c=>{
+        const activo = clienteSeleccionado===c.id ? "active":"";
+        const pill = c.moraMax>0 ? `<span class="pill mora">${c.moraMax}d mora</span>` : `<span class="pill ok">al día</span>`;
+        return `<div class="client-row ${activo}" data-id="${c.id}">
+          <div><div class="name">${c.nombre}</div><div class="nit mono">${c.nit} · ${fmtQ(c.total)}</div></div>
+          ${pill}
+        </div>`;
+      }).join("");
+      cont.querySelectorAll(".client-row").forEach(row=>{
+        row.addEventListener("click", ()=>seleccionarCliente(Number(row.dataset.id)));
+      });
+    }catch(e){
+      cont.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
+    }
+  }
+
+  function seleccionarCliente(id){
+    clienteSeleccionado = id;
+    if (salaActual !== id && socket && socket.connected) {
+      socket.emit("join", id); // socket.join() del lado del servidor, por sala de cliente
+      salaActual = id;
+    }
+    renderClientList($("#filtroClientes").value);
+    cargarPagos(id);
+  }
+
+  /* ---------- C2 (real): estados idle/loading/succeeded/failed reales ---------- */
+  async function cargarPagos(id){
+    const statusEl = $("#fetchStatus");
+    const body = $("#detailBody");
+    statusEl.innerHTML = `<span class="spin"></span> cargando…`;
+    body.innerHTML = `<div class="empty">Consultando pagos…</div>`;
+
+    const cliente = (await apiFetch("/clientes")).find(c=>c.id===id);
+    $("#detailTitle").textContent = cliente ? cliente.nombre : "Cliente";
+
+    try{
+      const pagos = await apiFetch("/pagos?cliente_id=" + id);
+      statusEl.textContent = "✓ actualizado";
+      renderDetalle(id, pagos);
+    }catch(e){
+      statusEl.textContent = "";
+      body.innerHTML = `<div class="empty">⚠️ ${e.message}<br><br><button class="btn" id="retryBtn">Reintentar</button></div>`;
+      $("#retryBtn").addEventListener("click", ()=>cargarPagos(id));
+    }
+  }
+
+  function renderDetalle(id, pagos){
+    const filas = pagos.map(p=>`
+      <tr>
+        <td>${fmtFecha(p.fechaPago)}</td>
+        <td class="amount">${fmtQ(p.monto)}</td>
+        <td>${p.formaPago}</td>
+        <td>${p.diasMora>0 ? `<span class="pill mora">${p.diasMora} días</span>` : `<span class="pill ok">a tiempo</span>`}</td>
+      </tr>`).join("");
+
+    $("#detailBody").innerHTML = `
+      <table>
+        <thead><tr><th>Fecha de pago</th><th>Monto</th><th>Forma</th><th>Mora</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="4" class="empty">Sin pagos registrados.</td></tr>`}</tbody>
+      </table>
+      <div style="padding:.9rem;">
+        <h3 style="margin:.2rem 0 .6rem; font-size:.88rem;">Registrar nuevo pago</h3>
+        <form id="pagoForm">
+          <label>Monto (Q)</label>
+          <input type="number" step="0.01" id="pagoMonto" placeholder="Ej. 850.00" required>
+          <label>Forma de pago</label>
+          <select id="pagoForma">
+            <option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Cheque</option>
+          </select>
+          <label>Fecha de vencimiento (para probar el cálculo de mora)</label>
+          <input type="date" id="pagoVencimiento">
+          <button class="btn primary" type="submit" style="margin-top:.7rem;">Registrar pago</button>
+        </form>
+        <div class="txlog" id="txlog" style="display:none;"></div>
+      </div>
+    `;
+
+    $("#pagoVencimiento").value = new Date().toISOString().slice(0,10);
+
+    $("#pagoForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const monto = parseFloat($("#pagoMonto").value);
+      const formaPago = $("#pagoForma").value;
+      const fechaVencimiento = $("#pagoVencimiento").value + " 00:00:00";
+
+      const log = $("#txlog");
+      log.style.display = "block";
+      log.innerHTML = "";
+      const linea = (texto, cls="") => {
+        const div = document.createElement("div");
+        div.className = cls; div.textContent = "> " + texto;
+        log.appendChild(div); log.scrollTop = log.scrollHeight;
+      };
+
+      linea("POST /api/pagos  (BEGIN TRANSACTION en el servidor)");
+      try{
+        const nuevo = await apiFetch("/pagos", {
+          method: "POST",
+          body: JSON.stringify({ clienteId: id, monto, formaPago, fechaVencimiento }),
+        });
+        linea(`COMMIT — pago #${nuevo.id} registrado`, "ok-line");
+        toast("Pago registrado", `Se registró ${fmtQ(nuevo.monto)}. El servidor ya avisó por Socket.IO a la sala de este cliente.`);
+        cargarPagos(id);
+        renderClientList($("#filtroClientes").value);
+        renderRanking();
+      }catch(err){
+        linea(`ROLLBACK — ${err.message}`, "err-line");
+        toast("No se pudo registrar", err.message);
+      }
+    });
+  }
+
+  /* ---------- B1 (real): ranking desde la API ---------- */
+  async function renderRanking(){
+    try{
+      const top = await apiFetch("/top5");
+      const max = top.length ? top[0].total : 1;
+      $("#rankingList").innerHTML = top.length ? top.map((row,i)=>`
+        <div class="rank-row">
+          <div class="rank-top">
+            <span><span class="n">#${i+1}</span>${row.cliente.nombre}</span>
+            <span class="amount">${fmtQ(row.total)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(row.total/max*100).toFixed(0)}%"></div></div>
+        </div>`).join("") : `<div class="empty">Sin pagos en los últimos 90 días.</div>`;
+    }catch(e){
+      $("#rankingList").innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
+    }
+  }
+
+  function toast(titulo, mensaje){
+    const cont = $("#toasts");
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = `<b>${titulo}</b>${mensaje}`;
+    cont.appendChild(el);
+    setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(),300); }, 5200);
+  }
+
+  /* ---------- Boot: si ya había un token guardado, entra directo ---------- */
+  if (localStorage.getItem(TOKEN_KEY)) {
+    tokenExpiraEn = 180; tokenEmitidoEn = Date.now(); // valor aproximado hasta la próxima petición
+    startApp();
+  }
+
+})();
+</script>
+</body>
+</html>
