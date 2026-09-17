@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo Socket.IO</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #111827;
+        color: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: #1f2937;
+        border-radius: 12px;
+        padding: 24px;
+        width: min(90vw, 420px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      }
+      h2 { margin-top: 0; }
+      .status {
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        background: #374151;
+      }
+      #log {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        min-height: 120px;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+      button {
+        margin-top: 12px;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Demo de notificación por sala</h2>
+      <div id="status" class="status">Conectando...</div>
+      <div id="log">Esperando eventos...</div>
+      <button id="joinBtn">Unirme como cliente 42</button>
+    </div>
+
+    <script>
+      const statusEl = document.getElementById('status');
+      const logEl = document.getElementById('log');
+      const joinBtn = document.getElementById('joinBtn');
+
+      const socket = io('http://localhost:3001', {
+        transports: ['websocket', 'polling']
+      });
+
+      function logMessage(message) {
+        const now = new Date().toLocaleTimeString();
+        logEl.textContent += `[${now}] ${message}\n`;
+      }
+
+      socket.on('connect', () => {
+        statusEl.textContent = 'Conectado al servidor';
+        logMessage('Socket conectado');
+      });
+
+      socket.on('disconnect', () => {
+        statusEl.textContent = 'Desconectado';
+        logMessage('Socket desconectado');
+      });
+
+      socket.on('status', (data) => {
+        logMessage('Estado: ' + JSON.stringify(data));
+      });
+
+      socket.on('pago:registrado', (pago) => {
+        logMessage('Evento recibido: ' + JSON.stringify(pago, null, 2));
+      });
+
+      socket.on('pago:guardado', (pago) => {
+        logMessage('Pago guardado: ' + JSON.stringify(pago, null, 2));
+      });
+
+      socket.on('error', (error) => {
+        logMessage('Error: ' + JSON.stringify(error));
+      });
+
+      joinBtn.addEventListener('click', () => {
+        socket.emit('join', '42');
+        logMessage('Se unió a la sala del cliente 42');
+
+        setTimeout(() => {
+          socket.emit('registrar_pago', { clienteId: '42', monto: 1500 });
+          logMessage('Se envió un pago de prueba para cliente 42');
+        }, 500);
+      });
+    </script>
+  </body>
+</html>

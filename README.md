@@ -1,83 +1,33 @@
-# Proyecto y Bugs
+# Reto Técnico OCA — Soluciones
 
-Este repositorio quedó inicializado en Git, pero actualmente está vacío. No contiene una aplicación ni dependencias aún.
+Estructura:
 
-## Estado actual
-
-- Repositorio clonado correctamente
-- Carpeta vacía sin archivos de proyecto
-- Sin package.json, backend ni frontend configurados
-
-## Prerrequisitos
-
-Antes de iniciar un proyecto en este repositorio, asegúrate de tener instalado:
-
-- Git
-- Node.js LTS
-- npm
-- opcionalmente: VS Code, Postman o una base de datos local
-
-## Comandos básicos
-
-### Clonar
-
-```bash
-git clone https://github.com/Gxbxsxn/Proyecto-y-Bugs.git
-cd Proyecto-y-Bugs
+```
+A-php/
+  A1_login_seguro.php       -> corrección de inyección SQL + hash de contraseña
+  A2_registrar_pago.php     -> transacción PDO (begin/commit/rollback)
+  A3_dias_mora.php          -> corrección de los 2 defectos de negocio
+B-sql/
+  B1_top5_clientes.sql      -> T-SQL, top 5 clientes últimos 90 días
+  B2_traduccion_tsql.sql    -> traducción MySQL -> T-SQL (paginación)
+  B3_rendimiento.md         -> plan de diagnóstico de rendimiento
+C-frontend/
+  C1_ListaClientes.jsx      -> fix de useEffect con dependencias
+  C2_pagosSlice.js          -> slice de Redux Toolkit con thunk
+  C3_axiosInterceptors.js   -> interceptores request/response con JWT
+D-nodejs/
+  D1_socketio_salas.js      -> notificación por sala en Socket.IO
 ```
 
-### Inicializar proyecto Node
+Cada archivo trae comentarios explicando **qué estaba mal** (cuando aplica)
+y **por qué** se resolvió de esa forma — son los puntos que puedo defender
+en la entrevista de seguimiento, tal como pide el enunciado.
 
-```bash
-npm init -y
-```
+## Antes de entregar
 
-### Instalar dependencias
-
-```bash
-npm install
-```
-
-### Ejecutar la app
-
-```bash
-node app.js
-```
-
-> Ajusta el comando final según el proyecto real que se agregue al repositorio.
-
-## Siguiente paso
-
-Cuando el proyecto real esté disponible en esta carpeta, se recomienda:
-
-1. Agregar la estructura del backend/frontend
-2. Instalar dependencias con npm o otra herramienta
-3. Crear un archivo de arranque (`app.js`, `server.js`, etc.)
-4. Documentar variables de entorno y comandos de ejecución
-
-## Recomendación
-
-Si este repositorio va a contener una app real, conviene organizarlo así:
-
-```text
-Proyecto-y-Bugs/
-├─ README.md
-├─ package.json
-├─ .gitignore
-├─ src/
-├─ public/
-├─ database/
-└─ docs/
-```
-
-## Git
-
-Para confirmar el estado del repositorio:
-
-```bash
-git status
-git add .
-git commit -m "Initial commit"
-```
-
-Si quieres, este README puede actualizarse más adelante con la documentación exacta del proyecto real que se suba al repositorio.
+- [ ] Inicializar como repo Git: `git init && git add . && git commit -m "Reto técnico OCA"`
+- [ ] Revisar cada comentario y asegurarte de poder explicarlo con tus
+      propias palabras — el enunciado dice que la explicación pesa tanto
+      como el código.
+- [ ] Enviar a e.linares@ocacall.com con copia a ne.perez@ocacall.com
+- [ ] Fecha límite: 18 de septiembre de 2026
