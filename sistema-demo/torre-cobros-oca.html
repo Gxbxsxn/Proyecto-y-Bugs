@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torre de Cobros — OCA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDF0F4; --panel:#FFFFFF; --panel-2:#F6F8FA; --border:#D7DCE3;
+    --ink:#141A21; --muted:#5B6472;
+    --teal:#0E7C66; --teal-soft:#E1F2ED;
+    --copper:#C1502E; --copper-soft:#FBE7DF;
+    --amber:#B9800E; --amber-soft:#FBF0D9;
+    --shadow: 0 1px 2px rgba(20,26,33,.04);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0B0F14; --panel:#121821; --panel-2:#171E27; --border:#232B36;
+      --ink:#EAF0F6; --muted:#8A97A6;
+      --teal:#3FC1A0; --teal-soft:#122620;
+      --copper:#E58B62; --copper-soft:#2A1A13;
+      --amber:#E9B94A; --amber-soft:#2A2313;
+      --shadow: 0 1px 2px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B0F14; --panel:#121821; --panel-2:#171E27; --border:#232B36;
+    --ink:#EAF0F6; --muted:#8A97A6;
+    --teal:#3FC1A0; --teal-soft:#122620;
+    --copper:#E58B62; --copper-soft:#2A1A13;
+    --amber:#E9B94A; --amber-soft:#2A2313;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.font-display{font-family:'Space Grotesk',-apple-system,sans-serif;}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;}
+
+  /* ---------- Layout shell ---------- */
+  #app{display:none;}
+  #app.ready{display:flex; flex-direction:column; min-height:100vh;}
+
+  header.top{
+    display:flex; align-items:center; gap:1rem;
+    padding:.75rem 1.25rem; border-bottom:1px solid var(--border);
+    background:var(--panel); position:sticky; top:0; z-index:20;
+  }
+  header.top .brand{display:flex; align-items:center; gap:.6rem; margin-right:auto;}
+  header.top .brand .dot{width:9px; height:9px; border-radius:50%; background:var(--teal); box-shadow:0 0 0 3px var(--teal-soft);}
+  header.top .brand b{font-size:1.05rem; letter-spacing:.01em;}
+  header.top .brand small{color:var(--muted); font-size:.78rem;}
+  .clock{font-size:.8rem; color:var(--muted);}
+  .session-chip{
+    display:flex; align-items:center; gap:.45rem;
+    border:1px solid var(--border); border-radius:20px; padding:.3rem .7rem;
+    font-size:.78rem; color:var(--muted); background:var(--panel-2);
+  }
+  .session-chip b{color:var(--ink);}
+  .bell{
+    position:relative; width:34px; height:34px; border-radius:50%;
+    border:1px solid var(--border); background:var(--panel-2); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:1rem;
+  }
+  .bell .badge{
+    position:absolute; top:-4px; right:-4px; background:var(--copper); color:#fff;
+    font-size:.65rem; min-width:16px; height:16px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .btn{
+    border:1px solid var(--border); background:var(--panel-2); color:var(--ink);
+    padding:.45rem .85rem; border-radius:8px; font-size:.85rem; cursor:pointer;
+    font-family:inherit;
+  }
+  .btn:hover{border-color:var(--muted);}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn.primary:hover{filter:brightness(1.05);}
+  .btn.danger{background:var(--copper); border-color:var(--copper); color:#fff;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+
+  main.grid{
+    flex:1; display:grid; gap:1rem; padding:1rem 1.25rem;
+    grid-template-columns: 280px minmax(0,1fr) 300px;
+    align-items:start;
+  }
+  @media (max-width: 980px){
+    main.grid{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:.7rem .9rem; border-bottom:1px solid var(--border);
+  }
+  .panel-head h3{margin:0; font-size:.95rem;}
+  .panel-body{padding:.8rem .9rem;}
+  .panel-body.tight{padding:0;}
+
+  input, select{
+    width:100%; padding:.5rem .6rem; border:1px solid var(--border); border-radius:7px;
+    background:var(--panel-2); color:var(--ink); font-family:inherit; font-size:.85rem;
+  }
+  label{font-size:.78rem; color:var(--muted); display:block; margin:.5rem 0 .25rem;}
+  label:first-child{margin-top:0;}
+
+  /* ---------- Client list ---------- */
+  .client-row{
+    display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+    padding:.6rem .9rem; border-bottom:1px solid var(--border); cursor:pointer;
+  }
+  .client-row:last-child{border-bottom:none;}
+  .client-row:hover{background:var(--panel-2);}
+  .client-row.active{background:var(--teal-soft); border-left:3px solid var(--teal); padding-left:calc(.9rem - 3px);}
+  .client-row .name{font-size:.87rem;}
+  .client-row .nit{font-size:.72rem; color:var(--muted);}
+  .pill{
+    font-size:.68rem; padding:.15rem .5rem; border-radius:20px; white-space:nowrap;
+  }
+  .pill.ok{background:var(--teal-soft); color:var(--teal);}
+  .pill.mora{background:var(--copper-soft); color:var(--copper);}
+
+  /* ---------- Status badge (estado async, C2) ---------- */
+  .status{display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; color:var(--muted);}
+  .status .spin{
+    width:11px; height:11px; border-radius:50%; border:2px solid var(--border);
+    border-top-color:var(--teal); animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Empty state ---------- */
+  .empty{padding:2rem 1rem; text-align:center; color:var(--muted); font-size:.85rem;}
+
+  /* ---------- Payment history table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:.82rem;}
+  th{
+    text-align:left; font-weight:500; color:var(--muted); font-size:.72rem;
+    padding:.5rem .9rem; border-bottom:1px solid var(--border); background:var(--panel-2);
+  }
+  td{padding:.55rem .9rem; border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+  .amount{font-family:'IBM Plex Mono', monospace;}
+
+  /* ---------- Transaction log (A2) ---------- */
+  .txlog{
+    font-family:'IBM Plex Mono', monospace; font-size:.75rem; background:var(--panel-2);
+    border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem; margin-top:.6rem;
+    color:var(--muted); max-height:140px; overflow-y:auto;
+  }
+  .txlog div{padding:.1rem 0;}
+  .txlog .ok-line{color:var(--teal);}
+  .txlog .err-line{color:var(--copper);}
+
+  /* ---------- Ranking bars (B1) ---------- */
+  .rank-row{padding:.55rem .9rem; border-bottom:1px solid var(--border);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-top{display:flex; justify-content:space-between; font-size:.8rem; margin-bottom:.3rem;}
+  .rank-top .n{color:var(--muted); margin-right:.4rem;}
+  .bar-track{height:6px; border-radius:4px; background:var(--panel-2); overflow:hidden;}
+  .bar-fill{height:100%; background:var(--teal); border-radius:4px;}
+
+  /* ---------- SQL panel (B1/B2/B3 tie-in) ---------- */
+  .sql-toggle{font-size:.75rem; color:var(--teal); cursor:pointer; user-select:none;}
+  pre.sql{
+    font-family:'IBM Plex Mono', monospace; font-size:.72rem; background:var(--panel-2);
+    border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem; margin:.5rem 0 0;
+    white-space:pre-wrap; color:var(--muted);
+  }
+
+  /* ---------- Ticker / live feed (D1) ---------- */
+  .ticker{
+    border-top:1px solid var(--border); background:var(--panel);
+    padding:.5rem 1.25rem; display:flex; align-items:center; gap:.6rem;
+    font-size:.8rem; color:var(--muted); overflow:hidden;
+  }
+  .ticker b{color:var(--ink);}
+  .ticker .live-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--amber); flex:none;
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.25;}}
+  .ticker-msg{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* ---------- Toasts ---------- */
+  #toasts{position:fixed; bottom:1rem; right:1rem; display:flex; flex-direction:column; gap:.5rem; z-index:50;}
+  .toast{
+    background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber);
+    border-radius:8px; padding:.65rem .9rem; font-size:.82rem; box-shadow:0 6px 20px rgba(0,0,0,.12);
+    max-width:300px; animation:slidein .25s ease-out;
+  }
+  .toast b{display:block; font-size:.8rem; margin-bottom:.15rem;}
+  @keyframes slidein{from{transform:translateX(12px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+
+  /* ---------- Login screen ---------- */
+  #login{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); padding:1rem;
+  }
+  .login-card{
+    width:100%; max-width:360px; background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:1.6rem; box-shadow:var(--shadow);
+  }
+  .login-card .dot{width:9px; height:9px; border-radius:50%; background:var(--teal); display:inline-block; margin-right:.4rem; box-shadow:0 0 0 3px var(--teal-soft);}
+  .login-card h1{font-size:1.15rem; margin:.6rem 0 .1rem;}
+  .login-card p{color:var(--muted); font-size:.82rem; margin:0 0 1.1rem;}
+  .login-card .demo{
+    margin-top:1rem; font-size:.75rem; color:var(--muted); background:var(--panel-2);
+    border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem;
+  }
+  .field-error{color:var(--copper); font-size:.75rem; min-height:1.1rem; margin-top:.4rem;}
+
+  footer.note{
+    text-align:center; font-size:.72rem; color:var(--muted); padding:.6rem; border-top:1px solid var(--border);
+  }
+  .kbd{font-family:'IBM Plex Mono', monospace; background:var(--panel-2); border:1px solid var(--border); border-radius:4px; padding:0 .3rem;}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <span class="dot"></span><b class="font-display">Torre de Cobros</b>
+    <h1 class="font-display">Iniciar sesión</h1>
+    <p>Sistema de gestión de pagos — demo del reto técnico OCA.</p>
+    <form id="loginForm">
+      <label for="usuario">Usuario</label>
+      <input id="usuario" autocomplete="username" value="analista" required>
+      <label for="clave">Contraseña</label>
+      <input id="clave" type="password" autocomplete="current-password" value="cobros2026" required>
+      <div class="field-error" id="loginError"></div>
+      <button class="btn primary" type="submit" style="width:100%; margin-top:.4rem;" id="loginBtn">Entrar</button>
+    </form>
+    <div class="demo">
+      Usuario demo precargado. La clave se valida como <span class="mono">password_verify()</span> contra un hash guardado (simulado en el navegador para esta demo).
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="dot"></span>
+      <div>
+        <div><b class="font-display">Torre de Cobros</b></div>
+        <small>Demo · reto técnico OCA</small>
+      </div>
+    </div>
+    <div class="clock mono" id="clock"></div>
+    <div class="session-chip" id="sessionChip" title="Simulación de token JWT con expiración">
+      🔐 sesión expira en <b id="sessionCountdown">--</b>
+    </div>
+    <button class="bell" id="bellBtn" title="Notificaciones en tiempo real">
+      🔔<span class="badge" id="bellBadge" style="display:none;">0</span>
+    </button>
+    <button class="btn" id="logoutBtn">Salir</button>
+  </header>
+
+  <main class="grid">
+    <!-- ===== LEFT: client list (C1) ===== -->
+    <section class="panel">
+      <div class="panel-head">
+        <h3>Clientes</h3>
+      </div>
+      <div class="panel-body" style="padding-bottom:.4rem;">
+        <input id="filtroClientes" placeholder="Filtrar por nombre o NIT…">
+      </div>
+      <div class="panel-body tight" id="clientList"></div>
+    </section>
+
+    <!-- ===== CENTER: client detail + register payment (A2, A3, C2) ===== -->
+    <section class="panel" id="detailPanel">
+      <div class="panel-head">
+        <h3 id="detailTitle">Selecciona un cliente</h3>
+        <span class="status" id="fetchStatus"></span>
+      </div>
+      <div class="panel-body" id="detailBody">
+        <div class="empty">Elige un cliente de la lista para ver su historial de pagos y su mora.</div>
+      </div>
+    </section>
+
+    <!-- ===== RIGHT: ranking (B1) + SQL tie-in ===== -->
+    <aside class="panel">
+      <div class="panel-head">
+        <h3>Top 5 · últimos 90 días</h3>
+      </div>
+      <div class="panel-body tight" id="rankingList"></div>
+      <div class="panel-body" style="border-top:1px solid var(--border);">
+        <span class="sql-toggle" id="sqlToggle">Ver consulta T-SQL generada (B1)</span>
+        <pre class="sql" id="sqlBox" style="display:none;"></pre>
+      </div>
+    </aside>
+  </main>
+
+  <div class="ticker">
+    <span class="live-dot"></span>
+    <span>Sala de eventos en vivo:</span>
+    <span class="ticker-msg mono" id="tickerMsg">esperando actividad…</span>
+  </div>
+
+  <footer class="note">
+    Demo educativa para acompañar el reto técnico OCA — hashes de contraseña, JWT y Socket.IO están <strong>simulados en el navegador</strong>, no son una implementación de producción.
+  </footer>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     "BASE DE DATOS" — persistida en localStorage (por usuario/navegador)
+     ========================================================= */
+  const DB_KEY = "torreCobros_db_v1";
+  const SESSION_KEY = "torreCobros_session_v1";
+  const SESSION_MINUTES = 3; // token corto a propósito, para ver expirar el interceptor en vivo
+
+  function nowISO(offsetDays){ 
+    const d = new Date();
+    if (offsetDays) d.setDate(d.getDate() + offsetDays);
+    return d.toISOString();
+  }
+
+  function seedDB(){
+    const nombres = [
+      ["Distribuidora Maíz Real","NIT-0012"],
+      ["Ferretería El Tornillo","NIT-0044"],
+      ["Panadería Doña Elsa","NIT-0091"],
+      ["Transportes Quiché","NIT-0133"],
+      ["Textiles San Marcos","NIT-0207"],
+      ["Farmacia Vida Plena","NIT-0258"],
+      ["Constructora Alto Real","NIT-0301"],
+      ["Comercial Petén Norte","NIT-0355"],
+    ];
+    const clientes = nombres.map((n,i)=>({ id:i+1, nombre:n[0], nit:n[1] }));
+
+    const formas = ["Transferencia","Efectivo","Tarjeta","Cheque"];
+    let pagoId = 1;
+    const pagos = [];
+    clientes.forEach(c=>{
+      const nPagos = 3 + Math.floor(Math.random()*4);
+      for(let i=0;i<nPagos;i++){
+        const diasAtras = Math.floor(Math.random()*140);
+        const vencimiento = nowISO(-diasAtras - Math.floor(Math.random()*10));
+        // la mayoría paga con algo de atraso o adelanto, para que el cálculo de mora se note
+        const desfaseAlPagar = Math.floor(Math.random()*14) - 3;
+        const fechaPagoDate = new Date(vencimiento);
+        fechaPagoDate.setDate(fechaPagoDate.getDate() + desfaseAlPagar);
+        pagos.push({
+          id: pagoId++,
+          clienteId: c.id,
+          monto: Math.round((300 + Math.random()*4200) * 100) / 100,
+          formaPago: formas[Math.floor(Math.random()*formas.length)],
+          fechaVencimiento: vencimiento,
+          fechaPago: fechaPagoDate.toISOString(),
+        });
+      }
+    });
+
+    return { clientes, pagos, usuarios: [{
+      usuario:"analista",
+      // "hash" simulado — en un backend real esto es password_hash() / bcrypt.
+      claveHash: btoa("cobros2026::salt-demo")
+    }]};
+  }
+
+  function loadDB(){
+    try{
+      const raw = localStorage.getItem(DB_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){ /* localStorage puede fallar (modo privado, cuota, etc.) */ }
+    const fresh = seedDB();
+    saveDB(fresh);
+    return fresh;
+  }
+
+  function saveDB(db){
+    try{ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+    catch(e){ console.error("No se pudo guardar en localStorage:", e); }
+  }
+
+  let db = loadDB();
+
+  /* =========================================================
+     A1 · login() — validación simulada de credenciales
+     (en un backend real: PDO + prepared statement + password_verify)
+     ========================================================= */
+  function login(usuario, clave){
+    const row = db.usuarios.find(u => u.usuario === usuario);
+    if(!row) return null; // no revela si el usuario existe o no
+    const claveValida = btoa(clave + "::salt-demo") === row.claveHash;
+    if(!claveValida) return null;
+    return { usuario: row.usuario };
+  }
+
+  /* =========================================================
+     A3 · diasMora() — versión corregida (sin negativos, sin decimales de hora)
+     ========================================================= */
+  function diasMora(fechaVencimiento, fechaPago){
+    const venc = new Date(fechaVencimiento); venc.setHours(0,0,0,0);
+    const pago = new Date(fechaPago); pago.setHours(0,0,0,0);
+    const dias = Math.round((pago - venc) / 86400000);
+    return Math.max(0, dias);
+  }
+
+  /* =========================================================
+     A2 · registrarPago() — simulación de transacción con
+     beginTransaction / commit / rollBack
+     ========================================================= */
+  function registrarPago({clienteId, monto, formaPago, fechaVencimiento}, onStep){
+    return new Promise((resolve, reject)=>{
+      onStep({text:"BEGIN TRANSACTION", cls:""});
+      setTimeout(()=>{
+        if(!(monto > 0)){
+          onStep({text:"ROLLBACK — el monto debe ser mayor a cero", cls:"err-line"});
+          reject(new Error("El monto debe ser mayor a cero."));
+          return;
+        }
+        onStep({text:`INSERT INTO pagos (cliente_id, monto, forma_pago, fecha_pago) VALUES (${clienteId}, ${monto}, '${formaPago}', NOW())`, cls:""});
+        setTimeout(()=>{
+          const nuevo = {
+            id: Math.max(0, ...db.pagos.map(p=>p.id)) + 1,
+            clienteId, monto, formaPago,
+            fechaVencimiento: fechaVencimiento || nowISO(),
+            fechaPago: nowISO(),
+          };
+          db.pagos.push(nuevo);
+          saveDB(db);
+          onStep({text:`COMMIT — pago #${nuevo.id} registrado`, cls:"ok-line"});
+          resolve(nuevo);
+        }, 450);
+      }, 350);
+    });
+  }
+
+  /* =========================================================
+     B1 · top 5 clientes que más han pagado en los últimos 90 días
+     ========================================================= */
+  function top5UltimosNoventaDias(){
+    const limite = new Date(); limite.setDate(limite.getDate()-90);
+    const totales = {};
+    db.pagos.forEach(p=>{
+      if(new Date(p.fechaPago) >= limite){
+        totales[p.clienteId] = (totales[p.clienteId]||0) + p.monto;
+      }
+    });
+    return Object.entries(totales)
+      .map(([clienteId, total])=>({
+        cliente: db.clientes.find(c=>c.id==clienteId),
+        total
+      }))
+      .sort((a,b)=>b.total - a.total)
+      .slice(0,5);
+  }
+
+  const SQL_B1 = `SELECT TOP 5
+    c.id, c.nombre, SUM(p.monto) AS total_pagado
+FROM clientes c
+INNER JOIN pagos p ON p.cliente_id = c.id
+WHERE p.fecha_pago >= DATEADD(DAY, -90, CAST(GETDATE() AS DATE))
+GROUP BY c.id, c.nombre
+ORDER BY total_pagado DESC;`;
+
+  /* =========================================================
+     C2 · fetchPagos "thunk" — estados idle/loading/succeeded/failed
+     (simulado: latencia real de red + 8% de probabilidad de error,
+     con botón de reintentar, tal como en la app real)
+     ========================================================= */
+  function fetchPagos(clienteId){
+    return new Promise((resolve, reject)=>{
+      setTimeout(()=>{
+        if(Math.random() < 0.08){
+          reject(new Error("Tiempo de espera agotado al consultar /pagos"));
+          return;
+        }
+        resolve(db.pagos.filter(p=>p.clienteId===clienteId)
+          .sort((a,b)=> new Date(b.fechaPago) - new Date(a.fechaPago)));
+      }, 500 + Math.random()*400);
+    });
+  }
+
+  /* =========================================================
+     C3 · interceptor JWT — simulado con expiración de sesión
+     ========================================================= */
+  function getSession(){
+    try{ return JSON.parse(localStorage.getItem(SESSION_KEY)); }
+    catch(e){ return null; }
+  }
+  function setSession(s){
+    try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){}
+  }
+  function clearSession(){
+    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+  function sessionValid(s){
+    return s && s.expiresAt && Date.now() < s.expiresAt;
+  }
+
+  /* =========================================================
+     D1 · notificación por "sala" — BroadcastChannel como Socket.IO
+     Cada cliente tiene su propia sala: "cliente:<id>".
+     Abre esta página en dos pestañas y observa cómo solo la
+     pestaña que tiene abierto ESE cliente recibe el evento en vivo.
+     ========================================================= */
+  const salas = {};
+  function salaDe(clienteId){
+    const nombre = `cliente:${clienteId}`;
+    if(!salas[nombre]){
+      try{ salas[nombre] = new BroadcastChannel(nombre); }
+      catch(e){ salas[nombre] = null; }
+    }
+    return salas[nombre];
+  }
+  function emitirPagoRegistrado(clienteId, pago){
+    const payload = { tipo:"pago:registrado", clienteId, pago, ts: Date.now() };
+    const canal = salaDe(clienteId);
+    if(canal) canal.postMessage(payload);
+
+    // Fallback local para que incluso en la misma pestaña o en navegadores con
+    // BroadcastChannel limitado, la actividad aparezca en el ticker y la campana.
+    try{
+      localStorage.setItem("torreCobros:actividad:last", JSON.stringify(payload));
+    }catch(e){}
+
+    // también al canal global, para el ticker de actividad (como un panel de admin)
+    try{
+      const global = new BroadcastChannel("torreCobros:actividad");
+      global.postMessage(payload);
+      global.close();
+    }catch(e){}
+
+    // activa el mismo flujo en la pestaña actual sin depender del canal.
+    handleActividad(payload);
+  }
+
+  /* =========================================================
+     UI STATE
+     ========================================================= */
+  let clienteSeleccionado = null;
+  let notificaciones = 0;
+  let sesionTimer = null;
+  let actividadCanal = null;
+
+  const $ = (sel)=>document.querySelector(sel);
+  const clockEl = $("#clock");
+  const appEl = $("#app");
+  const loginEl = $("#login");
+
+  function fmtQ(n){
+    return "Q " + n.toLocaleString("es-GT", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtFecha(iso){
+    return new Date(iso).toLocaleDateString("es-GT", {day:"2-digit", month:"short", year:"numeric"});
+  }
+
+  function tick(){
+    clockEl.textContent = new Date().toLocaleTimeString("es-GT", {hour12:false});
+  }
+  setInterval(tick, 1000); tick();
+
+  /* ---------- Login flow ---------- */
+  $("#loginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const usuario = $("#usuario").value.trim();
+    const clave = $("#clave").value;
+    const btn = $("#loginBtn");
+    const err = $("#loginError");
+    err.textContent = "";
+    btn.disabled = true; btn.textContent = "Verificando…";
+
+    // Simula la latencia de un POST /login real
+    setTimeout(()=>{
+      const resultado = login(usuario, clave);
+      btn.disabled = false; btn.textContent = "Entrar";
+      if(!resultado){
+        err.textContent = "Usuario o clave incorrectos.";
+        return;
+      }
+      const session = { usuario: resultado.usuario, expiresAt: Date.now() + SESSION_MINUTES*60*1000 };
+      setSession(session);
+      startApp(session);
+    }, 500);
+  });
+
+  $("#logoutBtn").addEventListener("click", ()=>doLogout("Cerraste sesión."));
+
+  function doLogout(motivo){
+    clearSession();
+    if(sesionTimer) clearInterval(sesionTimer);
+    appEl.classList.remove("ready");
+    loginEl.style.display = "flex";
+    $("#loginError").textContent = motivo || "";
+    $("#clave").value = "";
+  }
+
+  function startApp(session){
+    loginEl.style.display = "none";
+    appEl.classList.add("ready");
+    renderSessionChip(session);
+    sesionTimer = setInterval(()=>{
+      const s = getSession();
+      if(!sessionValid(s)){
+        // === aquí actúa el "interceptor 401": la sesión venció ===
+        toast("Sesión expirada", "El token expiró (simulado) — se cerró la sesión automáticamente, igual que haría un interceptor de Axios ante un 401.");
+        doLogout("Tu sesión expiró. Vuelve a iniciar sesión.");
+        return;
+      }
+      renderSessionChip(s);
+    }, 1000);
+
+    renderClientList();
+    renderRanking();
+    listenActividadGlobal();
+  }
+
+  function renderSessionChip(session){
+    const restante = Math.max(0, session.expiresAt - Date.now());
+    const m = Math.floor(restante/60000);
+    const s = Math.floor((restante%60000)/1000).toString().padStart(2,"0");
+    $("#sessionCountdown").textContent = `${m}:${s}`;
+  }
+
+  /* ---------- Client list (C1) ---------- */
+  $("#filtroClientes").addEventListener("input", (e)=>renderClientList(e.target.value));
+
+  function totalYMoraDe(clienteId){
+    const pagosCliente = db.pagos.filter(p=>p.clienteId===clienteId);
+    const total = pagosCliente.reduce((acc,p)=>acc+p.monto,0);
+    const moraMax = pagosCliente.reduce((max,p)=>Math.max(max, diasMora(p.fechaVencimiento, p.fechaPago)), 0);
+    return { total, moraMax };
+  }
+
+  function renderClientList(filtro){
+    filtro = (filtro||"").toLowerCase();
+    const cont = $("#clientList");
+    const items = db.clientes.filter(c =>
+      c.nombre.toLowerCase().includes(filtro) || c.nit.toLowerCase().includes(filtro)
+    );
+    if(items.length===0){
+      cont.innerHTML = `<div class="empty">Sin resultados para "${filtro}".</div>`;
+      return;
+    }
+    cont.innerHTML = items.map(c=>{
+      const {total, moraMax} = totalYMoraDe(c.id);
+      const activo = clienteSeleccionado===c.id ? "active":"";
+      const pill = moraMax>0
+        ? `<span class="pill mora">${moraMax}d mora</span>`
+        : `<span class="pill ok">al día</span>`;
+      return `<div class="client-row ${activo}" data-id="${c.id}">
+        <div>
+          <div class="name">${c.nombre}</div>
+          <div class="nit mono">${c.nit} · ${fmtQ(total)}</div>
+        </div>
+        ${pill}
+      </div>`;
+    }).join("");
+    cont.querySelectorAll(".client-row").forEach(row=>{
+      row.addEventListener("click", ()=>seleccionarCliente(Number(row.dataset.id)));
+    });
+  }
+
+  /* ---------- Client detail (C2 async states + A2 + A3) ---------- */
+  function seleccionarCliente(id){
+    clienteSeleccionado = id;
+    renderClientList($("#filtroClientes").value);
+    const cliente = db.clientes.find(c=>c.id===id);
+    $("#detailTitle").textContent = cliente.nombre;
+    suscribirSalaDetalle(id);
+    cargarPagos(id);
+  }
+
+  function cargarPagos(id){
+    const statusEl = $("#fetchStatus");
+    const body = $("#detailBody");
+    statusEl.innerHTML = `<span class="spin"></span> cargando…`;
+    body.innerHTML = `<div class="empty">Consultando pagos…</div>`;
+
+    fetchPagos(id).then(pagos=>{
+      statusEl.textContent = "✓ actualizado";
+      renderDetalle(id, pagos);
+    }).catch(err=>{
+      statusEl.textContent = "";
+      body.innerHTML = `<div class="empty">
+        ⚠️ ${err.message}<br><br>
+        <button class="btn" id="retryBtn">Reintentar</button>
+      </div>`;
+      $("#retryBtn").addEventListener("click", ()=>cargarPagos(id));
+    });
+  }
+
+  function renderDetalle(id, pagos){
+    const filas = pagos.map(p=>{
+      const mora = diasMora(p.fechaVencimiento, p.fechaPago);
+      return `<tr>
+        <td>${fmtFecha(p.fechaPago)}</td>
+        <td class="amount">${fmtQ(p.monto)}</td>
+        <td>${p.formaPago}</td>
+        <td>${mora>0 ? `<span class="pill mora">${mora} días</span>` : `<span class="pill ok">a tiempo</span>`}</td>
+      </tr>`;
+    }).join("");
+
+    $("#detailBody").innerHTML = `
+      <table>
+        <thead><tr><th>Fecha de pago</th><th>Monto</th><th>Forma</th><th>Mora</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="4" class="empty">Sin pagos registrados.</td></tr>`}</tbody>
+      </table>
+
+      <div style="padding:.9rem;">
+        <h3 style="margin:.2rem 0 .6rem; font-size:.88rem;">Registrar nuevo pago</h3>
+        <form id="pagoForm">
+          <label>Monto (Q)</label>
+          <input type="number" step="0.01" id="pagoMonto" placeholder="Ej. 850.00" required>
+          <label>Forma de pago</label>
+          <select id="pagoForma">
+            <option>Transferencia</option>
+            <option>Efectivo</option>
+            <option>Tarjeta</option>
+            <option>Cheque</option>
+          </select>
+          <label>Fecha de vencimiento (para probar el cálculo de mora)</label>
+          <input type="date" id="pagoVencimiento">
+          <button class="btn primary" type="submit" style="margin-top:.7rem;">Registrar pago</button>
+        </form>
+        <div class="txlog" id="txlog" style="display:none;"></div>
+      </div>
+    `;
+
+    const hoy = new Date().toISOString().slice(0,10);
+    $("#pagoVencimiento").value = hoy;
+
+    $("#pagoForm").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const monto = parseFloat($("#pagoMonto").value);
+      const formaPago = $("#pagoForma").value;
+      const vencimientoInput = $("#pagoVencimiento").value;
+      const fechaVencimiento = vencimientoInput ? new Date(vencimientoInput+"T00:00:00").toISOString() : nowISO();
+
+      const log = $("#txlog");
+      log.style.display = "block";
+      log.innerHTML = "";
+      const onStep = (line)=>{
+        const div = document.createElement("div");
+        div.className = line.cls;
+        div.textContent = "> " + line.text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      };
+
+      registrarPago({clienteId:id, monto, formaPago, fechaVencimiento}, onStep)
+        .then(nuevo=>{
+          emitirPagoRegistrado(id, nuevo);
+          toast("Pago registrado", `Se registró ${fmtQ(nuevo.monto)} para este cliente. Notificando su sala en tiempo real…`);
+          cargarPagos(id);
+          renderClientList($("#filtroClientes").value);
+          renderRanking();
+        })
+        .catch(err=>{
+          toast("No se pudo registrar", err.message);
+        });
+    });
+  }
+
+  /* ---------- D1: sala del cliente que se está viendo ---------- */
+  let salaActualCanal = null;
+  function suscribirSalaDetalle(id){
+    if(salaActualCanal) { try{ salaActualCanal.close(); }catch(e){} }
+    try{
+      salaActualCanal = new BroadcastChannel(`cliente:${id}`);
+      salaActualCanal.onmessage = (ev)=>{
+        if(ev.data?.tipo === "pago:registrado"){
+          toast("Nuevo pago recibido", `Otra pestaña registró un pago de ${fmtQ(ev.data.pago.monto)} para este mismo cliente — esta vista se actualizó sola, como en un socket.join(sala).`);
+          cargarPagos(id);
+          renderClientList($("#filtroClientes").value);
+          renderRanking();
+        }
+      };
+    }catch(e){ salaActualCanal = null; }
+  }
+
+  function handleActividad(data){
+    if(!data || data.tipo !== "pago:registrado") return;
+    const cliente = db.clientes.find(c=>c.id===data.clienteId);
+    pushTicker(`pago:registrado → sala cliente:${data.clienteId} (${cliente ? cliente.nombre : "?"}) · ${fmtQ(data.pago.monto)}`);
+    bumpBell();
+  }
+
+  function listenActividadGlobal(){
+    try{
+      actividadCanal = new BroadcastChannel("torreCobros:actividad");
+      actividadCanal.onmessage = (ev)=>handleActividad(ev.data);
+    }catch(e){}
+
+    window.addEventListener("storage", (event)=>{
+      if(event.key !== "torreCobros:actividad:last" || !event.newValue) return;
+      try{
+        const data = JSON.parse(event.newValue);
+        handleActividad(data);
+      }catch(e){}
+    });
+  }
+
+  function pushTicker(msg){
+    $("#tickerMsg").textContent = `${new Date().toLocaleTimeString("es-GT",{hour12:false})} — ${msg}`;
+  }
+  function bumpBell(){
+    notificaciones++;
+    const b = $("#bellBadge");
+    b.style.display = "flex";
+    b.textContent = notificaciones;
+  }
+  $("#bellBtn").addEventListener("click", ()=>{
+    notificaciones = 0;
+    $("#bellBadge").style.display = "none";
+  });
+
+  /* ---------- Ranking (B1) ---------- */
+  function renderRanking(){
+    const top = top5UltimosNoventaDias();
+    const max = top.length ? top[0].total : 1;
+    $("#rankingList").innerHTML = top.length ? top.map((row,i)=>`
+      <div class="rank-row">
+        <div class="rank-top">
+          <span><span class="n">#${i+1}</span>${row.cliente ? row.cliente.nombre : "Cliente eliminado"}</span>
+          <span class="amount">${fmtQ(row.total)}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(row.total/max*100).toFixed(0)}%"></div></div>
+      </div>
+    `).join("") : `<div class="empty">Sin pagos en los últimos 90 días.</div>`;
+  }
+
+  $("#sqlToggle").addEventListener("click", ()=>{
+    const box = $("#sqlBox");
+    const visible = box.style.display !== "none";
+    box.style.display = visible ? "none" : "block";
+    box.textContent = SQL_B1;
+    $("#sqlToggle").textContent = visible
+      ? "Ver consulta T-SQL generada (B1)"
+      : "Ocultar consulta T-SQL (B1)";
+  });
+
+  /* ---------- Toasts ---------- */
+  function toast(titulo, mensaje){
+    const cont = $("#toasts");
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = `<b>${titulo}</b>${mensaje}`;
+    cont.appendChild(el);
+    setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(),300); }, 5200);
+  }
+
+  /* ---------- Boot ---------- */
+  (function boot(){
+    const s = getSession();
+    if(sessionValid(s)){
+      startApp(s);
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>
