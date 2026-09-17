@@ -162,18 +162,4 @@ cualquier servidor estático, por ejemplo `npx serve frontend` o
    es el servidor Node avisando por la sala `cliente:<id>`, exactamente
    el mismo mecanismo de `D-nodejs/D1_socketio_salas.js`.
 
-## Notas de seguridad (léelas antes de la entrevista)
-
-- El secreto compartido entre PHP y Node (`NotificadorTiempoReal.php` /
-  `server.js`) está hardcodeado para simplificar la demo; en un proyecto
-  real iría en variables de entorno (`.env`), nunca en el repositorio.
-- `Access-Control-Allow-Origin: *` y `cors: { origin: "*" }` están abiertos
-  a propósito para que la demo funcione fácil en `localhost`; en
-  producción se restringiría al dominio real del frontend.
-- SQLite se usa por portabilidad (cero instalación); la lógica de acceso
-  a datos (PDO + prepared statements) es la misma que usarías contra
-  MySQL o SQL Server — solo cambia el DSN en `Database.php`.
-- Este backend no reemplaza los archivos comentados de `A-php/`, `B-sql/`,
-  etc. — son la referencia "de examen"; este backend es la prueba de que
-  esa misma lógica corre en un sistema real.
 
