@@ -3,7 +3,7 @@
 Esta entrega tiene dos partes principales:
 
 1. Las soluciones a los 9 ejercicios pedidos en el reto.
-2. Un sistema demo de un solo archivo, listo para abrir directamente en el navegador.
+2. Un sistema demo funcional para mostrar el flujo del negocio en el navegador.
 
 ```text
 entrega/
@@ -12,7 +12,7 @@ entrega/
 ├── C-frontend/                     Ejercicios de React / Redux Toolkit / Axios
 ├── D-nodejs/                       Bonus de Socket.IO
 ├── sistema-demo/
-│   └── torre-cobros-oca.html       Demo funcional en una sola página
+│   └── torre-cobros-oca.html       Demo de un solo archivo, lista para abrir
 ├── sistema-demo-backend-real/      Versión real con backend PHP + SQLite + Socket.IO
 ├── README.md
 └── .gitignore
@@ -37,36 +37,58 @@ entrega/
 
 ---
 
-## 2. Demostración rápida del sistema
+## 2. Demo funcional recomendada para presentar
 
-La versión recomendada para presentar es la demo de un solo archivo:
+La opción más simple y fiable es esta:
 
 - `sistema-demo/torre-cobros-oca.html`
 - se abre directamente en el navegador,
-- no requiere backend ni instalación,
-- permite mostrar login, pagos, mora, top 5 y notificaciones.
+- no requiere instalación ni backend,
+- permite demostrar login, pagos, mora y top 5 con datos simulados.
 
-Acceso:
+Credenciales:
 - Usuario: `analista`
 - Contraseña: `cobros2026`
 
-Abrir en el navegador en:
+URL de acceso:
 - `http://localhost:8080/torre-cobros-oca.html`
 
 ---
 
-## 3. Versión real del proyecto
+## 3. Versión real con backend
 
-También quedó incluida la carpeta `sistema-demo-backend-real/` con:
+La carpeta `sistema-demo-backend-real/` contiene una versión real del mismo flujo con:
 
 - backend PHP + SQLite
 - servidor Node + Socket.IO
-- frontend en HTML para probar el flujo real
+- frontend conectado a API y WebSockets reales
 
-Esta versión está pensada para demostrar que la lógica puede correr contra datos reales y notificaciones en vivo.
+Esto sirve para demostrar que la lógica funciona contra datos reales y notificaciones en tiempo real.
+
+### Arranque rápido
+
+```bash
+cd sistema-demo-backend-real/backend-php
+php -S localhost:8000 -t public
+```
+
+```bash
+cd sistema-demo-backend-real/backend-socket
+npm install
+npm start
+```
+
+```bash
+cd sistema-demo-backend-real
+python3 -m http.server 5173 -d frontend
+```
+
+Luego abre:
+- `http://localhost:5173`
 
 ---
 
 ## Estado final
 
-Proyecto preparado para entrega con la demo simple como versión principal y la versión real como complemento técnico.
+Este repositorio queda preparado para entrega con la demo simple como versión principal y la versión real como complemento técnico para demostrar la solución en un entorno real.
+
