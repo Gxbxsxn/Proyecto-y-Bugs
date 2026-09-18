@@ -46,7 +46,7 @@
   h1,h2,h3,.font-display{font-family:'Space Grotesk',-apple-system,sans-serif;}
   .mono{font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;}
 
-  /* ---------- Layout shell ---------- */
+  /* ¿ Layout shell  */
   #app{display:none;}
   #app.ready{display:flex; flex-direction:column; min-height:100vh;}
 
@@ -131,7 +131,7 @@
   .pill.ok{background:var(--teal-soft); color:var(--teal);}
   .pill.mora{background:var(--copper-soft); color:var(--copper);}
 
-  /* ---------- Status badge (estado async, C2) ---------- */
+  /*  Status badge (estado async, C2)  */
   .status{display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; color:var(--muted);}
   .status .spin{
     width:11px; height:11px; border-radius:50%; border:2px solid var(--border);
@@ -139,10 +139,10 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* ---------- Empty state ---------- */
+  /*  Empty state  */
   .empty{padding:2rem 1rem; text-align:center; color:var(--muted); font-size:.85rem;}
 
-  /* ---------- Payment history table ---------- */
+  /*  Payment history table  */
   table{width:100%; border-collapse:collapse; font-size:.82rem;}
   th{
     text-align:left; font-weight:500; color:var(--muted); font-size:.72rem;
@@ -152,7 +152,7 @@
   tr:last-child td{border-bottom:none;}
   .amount{font-family:'IBM Plex Mono', monospace;}
 
-  /* ---------- Transaction log (A2) ---------- */
+  /*  Transaction log (A2)  */
   .txlog{
     font-family:'IBM Plex Mono', monospace; font-size:.75rem; background:var(--panel-2);
     border:1px solid var(--border); border-radius:8px; padding:.6rem .7rem; margin-top:.6rem;
@@ -178,7 +178,7 @@
     white-space:pre-wrap; color:var(--muted);
   }
 
-  /* ---------- Ticker / live feed (D1) ---------- */
+  /*  Ticker / live feed (D1)  */
   .ticker{
     border-top:1px solid var(--border); background:var(--panel);
     padding:.5rem 1.25rem; display:flex; align-items:center; gap:.6rem;
@@ -192,7 +192,7 @@
   @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.25;}}
   .ticker-msg{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
-  /* ---------- Toasts ---------- */
+  /*  Toasts  */
   #toasts{position:fixed; bottom:1rem; right:1rem; display:flex; flex-direction:column; gap:.5rem; z-index:50;}
   .toast{
     background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber);
@@ -202,7 +202,7 @@
   .toast b{display:block; font-size:.8rem; margin-bottom:.15rem;}
   @keyframes slidein{from{transform:translateX(12px); opacity:0;} to{transform:translateX(0); opacity:1;}}
 
-  /* ---------- Login screen ---------- */
+  /*  Login screen  */
   #login{
     min-height:100vh; display:flex; align-items:center; justify-content:center;
     background:var(--bg); padding:1rem;
@@ -267,7 +267,7 @@
   </header>
 
   <main class="grid">
-    <!-- ===== LEFT: client list (C1) ===== -->
+    <!--  LEFT: client list (C1)  -->
     <section class="panel">
       <div class="panel-head">
         <h3>Clientes</h3>
@@ -278,7 +278,7 @@
       <div class="panel-body tight" id="clientList"></div>
     </section>
 
-    <!-- ===== CENTER: client detail + register payment (A2, A3, C2) ===== -->
+    <!--  CENTER: client detail + register payment (A2, A3, C2)  -->
     <section class="panel" id="detailPanel">
       <div class="panel-head">
         <h3 id="detailTitle">Selecciona un cliente</h3>
@@ -289,7 +289,7 @@
       </div>
     </section>
 
-    <!-- ===== RIGHT: ranking (B1) + SQL tie-in ===== -->
+    <!--  RIGHT: ranking (B1) + SQL tie-in  -->
     <aside class="panel">
       <div class="panel-head">
         <h3>Top 5 · últimos 90 días</h3>
@@ -319,9 +319,9 @@
 (function(){
   "use strict";
 
-  /* =========================================================
+  /* 
      "BASE DE DATOS" — persistida en localStorage (por usuario/navegador)
-     ========================================================= */
+      */
   const DB_KEY = "torreCobros_db_v1";
   const SESSION_KEY = "torreCobros_session_v1";
   const SESSION_MINUTES = 3; // token corto a propósito, para ver expirar el interceptor en vivo
@@ -392,10 +392,10 @@
 
   let db = loadDB();
 
-  /* =========================================================
+  /* 
      A1 · login() — validación simulada de credenciales
      (en un backend real: PDO + prepared statement + password_verify)
-     ========================================================= */
+      */
   function login(usuario, clave){
     const row = db.usuarios.find(u => u.usuario === usuario);
     if(!row) return null; // no revela si el usuario existe o no
@@ -404,9 +404,9 @@
     return { usuario: row.usuario };
   }
 
-  /* =========================================================
+  /* 
      A3 · diasMora() — versión corregida (sin negativos, sin decimales de hora)
-     ========================================================= */
+      */
   function diasMora(fechaVencimiento, fechaPago){
     const venc = new Date(fechaVencimiento); venc.setHours(0,0,0,0);
     const pago = new Date(fechaPago); pago.setHours(0,0,0,0);
@@ -414,10 +414,10 @@
     return Math.max(0, dias);
   }
 
-  /* =========================================================
+  /* 
      A2 · registrarPago() — simulación de transacción con
      beginTransaction / commit / rollBack
-     ========================================================= */
+      */
   function registrarPago({clienteId, monto, formaPago, fechaVencimiento}, onStep){
     return new Promise((resolve, reject)=>{
       onStep({text:"BEGIN TRANSACTION", cls:""});
@@ -444,9 +444,9 @@
     });
   }
 
-  /* =========================================================
+  /* 
      B1 · top 5 clientes que más han pagado en los últimos 90 días
-     ========================================================= */
+      */
   function top5UltimosNoventaDias(){
     const limite = new Date(); limite.setDate(limite.getDate()-90);
     const totales = {};
@@ -472,11 +472,11 @@ WHERE p.fecha_pago >= DATEADD(DAY, -90, CAST(GETDATE() AS DATE))
 GROUP BY c.id, c.nombre
 ORDER BY total_pagado DESC;`;
 
-  /* =========================================================
+  /* 
      C2 · fetchPagos "thunk" — estados idle/loading/succeeded/failed
      (simulado: latencia real de red + 8% de probabilidad de error,
      con botón de reintentar, tal como en la app real)
-     ========================================================= */
+      */
   function fetchPagos(clienteId){
     return new Promise((resolve, reject)=>{
       setTimeout(()=>{
@@ -490,9 +490,9 @@ ORDER BY total_pagado DESC;`;
     });
   }
 
-  /* =========================================================
+  /* 
      C3 · interceptor JWT — simulado con expiración de sesión
-     ========================================================= */
+      */
   function getSession(){
     try{ return JSON.parse(localStorage.getItem(SESSION_KEY)); }
     catch(e){ return null; }
@@ -507,12 +507,12 @@ ORDER BY total_pagado DESC;`;
     return s && s.expiresAt && Date.now() < s.expiresAt;
   }
 
-  /* =========================================================
+  /* 
      D1 · notificación por "sala" — BroadcastChannel como Socket.IO
      Cada cliente tiene su propia sala: "cliente:<id>".
      Abre esta página en dos pestañas y observa cómo solo la
      pestaña que tiene abierto ESE cliente recibe el evento en vivo.
-     ========================================================= */
+      */
   const salas = {};
   function salaDe(clienteId){
     const nombre = `cliente:${clienteId}`;
@@ -544,9 +544,9 @@ ORDER BY total_pagado DESC;`;
     handleActividad(payload);
   }
 
-  /* =========================================================
+  /* 
      UI STATE
-     ========================================================= */
+      */
   let clienteSeleccionado = null;
   let notificaciones = 0;
   let sesionTimer = null;
@@ -569,7 +569,7 @@ ORDER BY total_pagado DESC;`;
   }
   setInterval(tick, 1000); tick();
 
-  /* ---------- Login flow ---------- */
+  /*  Login flow  */
   $("#loginForm").addEventListener("submit", function(e){
     e.preventDefault();
     const usuario = $("#usuario").value.trim();
@@ -631,7 +631,7 @@ ORDER BY total_pagado DESC;`;
     $("#sessionCountdown").textContent = `${m}:${s}`;
   }
 
-  /* ---------- Client list (C1) ---------- */
+  /*  Client list (C1)  */
   $("#filtroClientes").addEventListener("input", (e)=>renderClientList(e.target.value));
 
   function totalYMoraDe(clienteId){
@@ -670,7 +670,7 @@ ORDER BY total_pagado DESC;`;
     });
   }
 
-  /* ---------- Client detail (C2 async states + A2 + A3) ---------- */
+  /*  Client detail (C2 async states + A2 + A3)  */
   function seleccionarCliente(id){
     clienteSeleccionado = id;
     renderClientList($("#filtroClientes").value);
@@ -771,7 +771,7 @@ ORDER BY total_pagado DESC;`;
     });
   }
 
-  /* ---------- D1: sala del cliente que se está viendo ---------- */
+  /*  D1: sala del cliente que se está viendo  */
   let salaActualCanal = null;
   function suscribirSalaDetalle(id){
     if(salaActualCanal) { try{ salaActualCanal.close(); }catch(e){} }
@@ -824,7 +824,7 @@ ORDER BY total_pagado DESC;`;
     $("#bellBadge").style.display = "none";
   });
 
-  /* ---------- Ranking (B1) ---------- */
+  /*  Ranking (B1)  */
   function renderRanking(){
     const top = top5UltimosNoventaDias();
     const max = top.length ? top[0].total : 1;
@@ -849,7 +849,7 @@ ORDER BY total_pagado DESC;`;
       : "Ocultar consulta T-SQL (B1)";
   });
 
-  /* ---------- Toasts ---------- */
+  /*  Toasts  */
   function toast(titulo, mensaje){
     const cont = $("#toasts");
     const el = document.createElement("div");
@@ -859,7 +859,7 @@ ORDER BY total_pagado DESC;`;
     setTimeout(()=>{ el.style.transition="opacity .3s"; el.style.opacity="0"; setTimeout(()=>el.remove(),300); }, 5200);
   }
 
-  /* ---------- Boot ---------- */
+  /*  Boot  */
   (function boot(){
     const s = getSession();
     if(sessionValid(s)){
