@@ -66,16 +66,4 @@ class PagosRepository
     }
 }
 
-/**
- * Notas para la entrevista:
- * - beginTransaction/commit/rollBack garantizan atomicidad: si el insert
- *   falla a medio camino (o si en el futuro se agregan más operaciones
- *   dentro del mismo método) no queda el sistema en un estado inconsistente.
- * - La validación de monto > 0 se hace ANTES de abrir la transacción para
- *   no pagar el costo de abrir/cerrar una transacción con datos inválidos.
- * - Uso parámetros nombrados (:cliente_id, etc.) en vez de posicionales
- *   para que la query sea legible y evitar errores de orden.
- * - lastInsertId() se lee dentro de la transacción, antes del commit,
- *   que es el uso estándar con PDO/MySQL/SQL Server (con SQL Server usar
- *   SCOPE_IDENTITY() vía OUTPUT si se prefiere evitar lastInsertId).
- */
+
