@@ -47,11 +47,3 @@ function ListaClientes({ filtro }) {
 
 export default ListaClientes;
 
-/**
- * Nota para la entrevista: el `cancelado`/cleanup no era estrictamente
- * parte del bug pedido (que era solo el array de dependencias vacío),
- * pero lo agrego porque es una consecuencia directa de re-disparar el
- * efecto en cada cambio de filtro: sin esa protección, si el usuario
- * escribe rápido, una respuesta anterior más lenta podría sobrescribir
- * una más reciente y más rápida.
- */
