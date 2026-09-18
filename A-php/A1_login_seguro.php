@@ -61,15 +61,3 @@ function login($usuario, $clave)
 
     return $row;
 }
-
-/**
- * Nota para la entrevista: la firma pide devolver "lo mismo que antes"
- * (el arreglo asociativo o algo falsy). Devuelvo `false` en vez de morir
- * con die(): así quien llama a login() decide qué mostrar al usuario
- * ("usuario o clave incorrectos", sin exponer detalles internos) y el
- * script no se corta de forma abrupta.
- *
- * Alta de usuario, para referencia (no pedida, pero completa el flujo):
- * $hash = password_hash($clavePlano, PASSWORD_DEFAULT);
- * INSERT INTO usuarios (usuario, clave) VALUES (:usuario, :hash)
- */
