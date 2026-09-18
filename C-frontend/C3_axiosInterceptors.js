@@ -45,16 +45,4 @@ api.interceptors.response.use(
 
 export default api;
 
-/**
- * Notas para la entrevista:
- * - Uso una instancia (axios.create) en vez de interceptar la instancia
- *   global de axios, para no afectar por accidente llamadas a APIs de
- *   terceros que no llevan JWT de esta app.
- * - El chequeo de `window.location.pathname !== "/login"` evita un bucle
- *   de redirecciones si /login también hiciera alguna llamada que
- *   devolviera 401.
- * - Si la app usa react-router, en vez de window.location.href se podría
- *   despachar una acción/navegación programática, pero eso implicaría
- *   acoplar este interceptor al router; la solución con window.location
- *   es más simple y funciona independientemente del router usado.
- */
+
